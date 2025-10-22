@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="uz">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Admin Panel - TEMUR STYLE</title>
+  <style>
+    body{background:#000;color:#fff;font-family:Arial;margin:0;padding:20px;}
+    input,button{padding:8px;border:none;border-radius:6px;margin:4px 0;}
+    input{width:100%;background:#111;color:#fff;border:1px solid #333;}
+    .btn-yellow{background:#ffcc00;color:#000;font-weight:600;}
+    .btn-blue{background:#2196f3;color:#fff;}
+    .card{border:1px solid #222;padding:10px;margin:10px 0;border-radius:8px;background:#111;}
+  </style>
+</head>
+<body>
+  <h2>Admin Panel — TEMUR STYLE DUKONI</h2>
+  <div id="login">
+    <p>Parol kiriting:</p>
+    <input type="password" id="pass">
+    <button class="btn-yellow" onclick="login()">Kirish</button>
+  </div>
+
+  <div id="panel" style="display:none;">
+    <h3>Mahsulot qo‘shish</h3>
+    <input id="pname" placeholder="Mahsulot nomi">
+    <input id="pprice" placeholder="Narx (so‘m)">
+    <input id="pimg" placeholder="Rasm URL">
+    <button class="btn-yellow" onclick="addProduct()">Qo‘shish</button>
+
+    <h3>Mahsulotlar</h3>
+    <div id="plist"></div>
+
+    <h3>Buyurtmalar</h3>
+    <div id="orders"></div>
+  </div>
+
+  <script>
+    const ADMIN_PASSWORD="temur123";
+    const PRODUCTS_KEY='temur_products';
+    const ORDERS_KEY='temur_orders';
+
+    function login(){
+      const val=document.getElementById('pass').value;
+      if(val===ADMIN_PASSWORD){
+        document.getElementById('login').style.display='none';
+        document.getElementById('panel').style.display='block';
+        renderProducts(); renderOrders();
+      } else alert('Noto‘g‘ri parol!');
+    }
+
+    function loadProducts(){return JSON.parse(localStorage.getItem(PRODUCTS_KEY)||'[]')}
+    function saveProducts(p){localStorage.setItem(PRODUCTS_KEY,JSON.stringify(p))}
+    function loadOrders(){return JSON.parse(localStorage.getItem(ORDERS_KEY)||'[]')}
+
+    function addProduct(){
+      const name=pname.value.trim(), price=+pprice.value, img=pimg.value.trim();
+      if(!name||!price||!img){alert('Barcha maydonni to‘ldiring');return;}
+      const list=loadProducts();
+      list.push({id:Date.now(),name,price,img});
+      saveProducts(list); renderProducts();
+      pname.value=pprice.value=pimg.value='';
+    }
+
+    function renderProducts(){
+      const list=loadProducts(), box=document.getElementById('plist'); box.innerHTML='';
+      list.forEach(p=>{
+        const div=document.createElement('div');div.className='card';
+        div.innerHTML=`<b>${p.name}</b> — ${p.price} so‘m<br><img src="${p.img}" width="100"><br>
+        <button class="btn-blue" onclick="delProduct(${p.id})">O‘chirish</button>`;
+        box.appendChild(div);
+      });
+    }
+
+    function delProduct(id){
+      let list=loadProducts().filter(p=>p.id!==id);
+      saveProducts(list); renderProducts();
+    }
+
+    function renderOrders(){
+      const o=loadOrders(), box=document.getElementById('orders'); box.innerHTML='';
+      if(o.length===0){box.innerHTML='<i>Buyurtmalar yo‘q</i>';return;}
+      o.forEach(order=>{
+        const div=document.createElement('div');div.className='card';
+        div.innerHTML=`<b>${order.time}</b><br>${Object.keys(order.items).length} ta mahsulot`;
+        box.appendChild(div);
+      });
+    }
+  </script>
+</body>
+</html>
