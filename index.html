@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="uz">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>FCUZPLAY TV — Jonli Futbol</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">FCUZPLAY TV <span class="muted">— Jonli futbol</span></div>
+    <nav>
+      <button id="refreshBtn" class="btn small">Yangilash</button>
+    </nav>
+  </header>
+
+  <main class="container">
+    <section class="live-list">
+      <h2>Hozir yoki yaqin vaqt ichida</h2>
+      <div id="matches" class="grid">
+        <!-- JS orqali elementlar joylanadi -->
+      </div>
+    </section>
+
+    <section class="player-panel" id="playerPanel">
+      <div class="player-header">
+        <h3 id="playerTitle">Tanlang — o‘yinni ko‘rish</h3>
+        <button id="closePlayer" class="btn small">Yopish</button>
+      </div>
+      <div class="player-body" id="playerBody">
+        <!-- iframe yoki placeholder -->
+        <div class="placeholder" id="playerPlaceholder">
+          <p>Jonli stream uchun ruxsatli embed yoki YouTube linkini qo‘shing.</p>
+        </div>
+      </div>
+      <div class="player-meta" id="playerMeta"></div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <small>FCUZPLAY TV — Demo. Haqiqiy translyatsiyalar uchun rasmiy manbalarga murojaat qiling.</small>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
