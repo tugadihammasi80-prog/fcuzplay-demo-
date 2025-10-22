@@ -1,0 +1,245 @@
+<!doctype html>
+
+<html lang="uz">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>fcuzplay — Demo: Aviator & Futbol</title>
+  <style>
+    :root{--bg:#0f1724;--card:#0b1220;--muted:#9aa4b2;--accent:#ffd166;--accent-2:#6ee7b7}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,'Helvetica Neue',Arial;background:linear-gradient(180deg,#071126 0%, #071a2b 100%);color:#e6eef8}
+    .wrap{max-width:980px;margin:28px auto;padding:20px}
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+    h1{font-size:20px;margin:0}
+    .card{background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.04);padding:16px;border-radius:12px;box-shadow:0 6px 18px rgba(2,6,23,0.6)}
+    .row{display:flex;gap:12px}
+    .col{flex:1}
+    .balance{font-size:18px;font-weight:600;color:var(--accent-2)}
+    label{font-size:13px;color:var(--muted)}
+    input[type=number]{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:inherit}
+    button{background:var(--accent);border:none;padding:10px 14px;border-radius:8px;font-weight:600;cursor:pointer}
+    button.secondary{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
+    .aviator-area{display:flex;gap:16px;align-items:stretch}
+    .canvas-card{flex:1;display:flex;flex-direction:column}
+    canvas{background:linear-gradient(180deg,#071a2b,#02111b);border-radius:8px}
+    .controls{display:flex;gap:8px;margin-top:12px;align-items:center}
+    .matches{margin-top:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+    .match{padding:12px;border-radius:10px;background:linear-gradient(180deg,rgba(255,255,255,0.01),transparent);border:1px solid rgba(255,255,255,0.03)}
+    .team{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+    .muted{color:var(--muted);font-size:13px}
+    footer{margin-top:18px;color:var(--muted);font-size:13px}
+    @media(max-width:720px){.aviator-area{flex-direction:column}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>fcuzplay — Demo (Aviator + Futbol)</h1>
+        <div class="muted">Soxta pul bilan ishlaydigan demo — haqiqiy pul tikish yo‘q</div>
+      </div>
+      <div class="card" style="display:flex;align-items:center;gap:12px">
+        <div class="muted">Balans</div>
+        <div class="balance" id="balance">1000.00 FCZ</div>
+      </div>
+    </header><section class="card aviator-area">
+  <div class="canvas-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div class="muted">Aviator Demo — Boshlang: avtomatik ko‘paytiruvchi</div>
+      <div class="muted">Round: <span id="round">0</span></div>
+    </div>
+    <canvas id="aviatorCanvas" width="640" height="220"></canvas>
+
+    <div class="controls">
+      <div style="flex:1">
+        <label class="muted">Bet (FCZ)</label>
+        <input id="betInput" type="number" value="50" min="1" />
+      </div>
+      <button id="startBtn">Start round</button>
+      <button id="cashoutBtn" class="secondary" disabled>Cash out</button>
+      <button id="autoplayBtn" class="secondary">Auto: OFF</button>
+    </div>
+    <div style="margin-top:8px" class="muted">Eslatma: Bu demo faqat ko‘ngilochar maqsadda. Hech qachon haqiqiy pul tikmang.</div>
+  </div>
+
+  <div class="col card" style="min-width:320px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div><strong>Futbol musobaqalari (demo)</strong></div>
+      <div class="muted">Predict & simulate</div>
+    </div>
+
+    <div id="matches" class="matches">
+      <!-- match cards injected by JS -->
+    </div>
+
+    <div style="margin-top:12px;display:flex;gap:8px;justify-content:space-between;align-items:center">
+      <button id="simulateMatches" class="secondary">Simulate matches</button>
+      <button id="resetBtn" class="secondary">Reset demo</button>
+    </div>
+  </div>
+</section>
+
+<footer>
+  Sizga yordam kerak bo‘lsa yozing — men Netlify’ga joylash bo‘yicha ham ko‘mak beraman.
+</footer>
+
+  </div>  <script>
+    // --- Basic demo state ---
+    let balance = 1000.0;
+    let round = 0;
+    const balanceEl = document.getElementById('balance');
+    const betInput = document.getElementById('betInput');
+    const startBtn = document.getElementById('startBtn');
+    const cashoutBtn = document.getElementById('cashoutBtn');
+    const autoplayBtn = document.getElementById('autoplayBtn');
+    const roundEl = document.getElementById('round');
+    const canvas = document.getElementById('aviatorCanvas');
+    const ctx = canvas.getContext('2d');
+
+    function updateBalance(){ balanceEl.textContent = balance.toFixed(2) + ' FCZ'; }
+    updateBalance();
+
+    // Aviator animation state
+    let anim = null;
+    let multiplier = 1.0;
+    let running = false;
+    let playerBet = 0;
+    let auto = false;
+
+    function resetAviatorView(){
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.fillStyle='#081427';
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.fillStyle='rgba(255,255,255,0.06)';
+      ctx.fillRect(10,10,620,180);
+      ctx.fillStyle='#dbeafe';
+      ctx.font='18px sans-serif';
+      ctx.fillText('Multiplier: x' + multiplier.toFixed(2), 16,30);
+    }
+
+    function drawAviator(){
+      resetAviatorView();
+      // draw multiplier big
+      ctx.fillStyle='#ffd166';
+      ctx.font='42px monospace';
+      ctx.fillText('x' + multiplier.toFixed(2), 20,110);
+      // simple airplane icon
+      ctx.beginPath();ctx.moveTo(520,40);ctx.lineTo(560,70);ctx.lineTo(520,100);ctx.fill();
+    }
+
+    function startRound(){
+      if(running) return;
+      playerBet = Math.max(1, Number(betInput.value) || 1);
+      if(playerBet > balance){ alert('Balans yetarli emas'); return; }
+      balance -= playerBet; updateBalance();
+      round += 1; roundEl.textContent = round;
+      multiplier = 1.0; running = true; cashoutBtn.disabled = false; startBtn.disabled = true;
+
+      // random crash multiplier: log-normal skew
+      const crashAt = (Math.random()*3 + 1) * (1 + Math.random()*3);
+      const start = performance.now();
+
+      function frame(now){
+        const t = (now - start)/1000;
+        // multiplier grows exponentially a bit
+        multiplier = Math.max(1, Math.pow(1.25, t));
+        drawAviator();
+        // if exceeds crashAt -> crash
+        if(multiplier >= crashAt){
+          // crash
+          running = false; cashoutBtn.disabled = true; startBtn.disabled = false;
+          // plane crash effect
+          ctx.fillStyle='rgba(255,40,40,0.9)'; ctx.font='28px sans-serif'; ctx.fillText('CRASH!', 420,140);
+          // player lost bet
+          playerBet = 0;
+          if(auto){ setTimeout(()=> startRound(),700); }
+          return;
+        }
+        anim = requestAnimationFrame(frame);
+      }
+      anim = requestAnimationFrame(frame);
+    }
+
+    function cashOut(){
+      if(!running) return;
+      running = false; cancelAnimationFrame(anim); anim = null; startBtn.disabled = false; cashoutBtn.disabled = true;
+      const winnings = playerBet * multiplier;
+      balance += winnings; updateBalance();
+      playerBet = 0;
+      // small success message
+      ctx.fillStyle='rgba(110,231,183,0.95)'; ctx.font='20px sans-serif'; ctx.fillText('Cashed out: ' + winnings.toFixed(2) + ' FCZ', 16, 160);
+      if(auto){ setTimeout(()=> startRound(),700); }
+    }
+
+    startBtn.addEventListener('click', startRound);
+    cashoutBtn.addEventListener('click', cashOut);
+    autoplayBtn.addEventListener('click', ()=>{
+      auto = !auto; autoplayBtn.textContent = auto ? 'Auto: ON' : 'Auto: OFF';
+    });
+
+    // initial draw loop
+    setInterval(()=>{ if(!running) { multiplier = 1.0; drawAviator(); } }, 600);
+
+    // --- Matches demo ---
+    const matchesEl = document.getElementById('matches');
+    const sampleMatches = [
+      {home:'Manchester United',away:'Chelsea',time:'Today 18:00'},
+      {home:'Real Madrid',away:'Barcelona',time:'Today 20:45'},
+      {home:'Juventus',away:'Inter',time:'Tomorrow 16:00'},
+      {home:'Bayern',away:'Dortmund',time:'Tomorrow 19:30'},
+    ];
+
+    function renderMatches(){
+      matchesEl.innerHTML = '';
+      sampleMatches.forEach((m,idx)=>{
+        const div = document.createElement('div'); div.className='match';
+        div.innerHTML = `
+          <div class="team"><div><strong>${m.home}</strong> <span class="muted">vs</span> <strong>${m.away}</strong></div><div class="muted">${m.time}</div></div>
+          <div class="muted">Predict outcome (demo)</div>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button class="secondary" onclick="predict(${idx},'home')">Home</button>
+            <button class="secondary" onclick="predict(${idx},'draw')">Draw</button>
+            <button class="secondary" onclick="predict(${idx},'away')">Away</button>
+          </div>
+          <div style="margin-top:8px" id="res-${idx}" class="muted"></div>
+        `;
+        matchesEl.appendChild(div);
+      });
+    }
+
+    window.predict = function(idx, choice){
+      const resEl = document.getElementById('res-'+idx);
+      // simulate result randomly; small bias for home
+      const roll = Math.random();
+      let result='';
+      if(roll < 0.45) result='home'; else if(roll < 0.75) result='draw'; else result='away';
+      if(choice === result){
+        // award small demo tokens
+        balance += 20; updateBalance();
+        resEl.textContent = 'Correct! You earned 20 FCZ (demo) — result: ' + result;
+      } else {
+        resEl.textContent = 'Incorrect — result: ' + result + ' (no real money lost)';
+      }
+    }
+
+    document.getElementById('simulateMatches').addEventListener('click', ()=>{
+      // simulate and reveal results
+      sampleMatches.forEach((m,idx)=>{
+        const resEl = document.getElementById('res-'+idx);
+        const roll = Math.random();
+        let result = '';
+        if(roll < 0.45) result='home'; else if(roll < 0.75) result='draw'; else result='away';
+        resEl.textContent = 'Result: ' + result;
+      });
+    });
+
+    document.getElementById('resetBtn').addEventListener('click', ()=>{
+      balance = 1000; updateBalance(); round = 0; roundEl.textContent = round; renderMatches();
+    });
+
+    // initial render
+    renderMatches();
+    drawAviator();
+  </script></body>
+</html>
