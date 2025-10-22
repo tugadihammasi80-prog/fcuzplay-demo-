@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aviator Crash Casino</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #f0f0f0;
+      margin: 0;
+      padding: 0;
+    }
+    #game-container {
+      margin-top: 50px;
+    }
+    canvas {
+      border: 2px solid #000;
+      display: block;
+      margin: 0 auto;
+    }
+    #score {
+      margin-top: 20px;
+      font-weight: bold;
+      font-size: 24px;
+      color: #333;
+    }
+    #balance {
+      margin-top: 20px;
+      font-weight: bold;
+      font-size: 24px;
+      color: #333;
+    }
+    #controls {
+      margin-top: 20px;
+    }
+    #history {
+      margin-top: 20px;
+      font-size: 16px;
+    }
+    #multiplier {
+      font-size: 18px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Aviator Crash Casino</h1>
+  <div id="game-container">
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
+    <div>
+      <label for="betAmount">Enter Bet Amount:</label>
+      <input type="number" id="betAmount" min="1" step="1">
+    </div>
+    <div id="balance">Balance: $10.00</div>
+    <div id="score">Cash Out Amount: $0.00</div>
+    <div id="controls">
+      <button id="placeBetButton" onclick="startNewRound()">Place Bet</button>
+      <button id="cashoutButton" onclick="cashOut()" disabled>Cash Out</button>
+    </div>
+    <div id="history"></div>
+    <div id="multiplier"></div>
+  </div>
+  <script>
+    let balance = 10.00;
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    let cashOutAmount = 0;
+    let betAmount = 0;
+    let isPlaying = false;
+    let animationFrameId;
+    let crashMultiplier = 1;
+    let roundMultiplierHistory = [];
+    let multiplierIncrement = 0.01;
+    let animationSpeed = 10;
+    let targetMultiplier = 1.00;
+    let hashGenerated = false;
+    let hashResult;
+
+    function startNewRound() {
+      if (!isPlaying) {
+        betAmount = parseInt(document.getElementById('betAmount').value);
+        if (betAmount > 0 && betAmount <= balance) {
+          balance -= betAmount;
+          document.getElementById('balance').innerText = `Balance: $${balance.toFixed(2)}`;
+          isPlaying = true;
+          document.getElementById('betAmount').disabled = true;
+          document.getElementById('placeBetButton').disabled = true;
+          document.getElementById('cashoutButton').disabled = false;
+          animate();
+        } else {
+          alert("Invalid bet amount or insufficient balance.");
+        }
+      } else {
+        alert("Finish the current round before placing a new bet.");
+      }
+    }
+
+    function cashOut() {
+      if (isPlaying) {
+        isPlaying = false;
+        document.getElementById('betAmount').disabled = false;
+        document.getElementById('placeBetButton').disabled = false;
+        document.getElementById('cashoutButton').disabled = true;
+        balance += cashOutAmount;
+        roundMultiplierHistory.push(targetMultiplier.toFixed(2));
+        updateMultiplierHistory();
+        document.getElementById('balance').innerText = `Balance: $${balance.toFixed(2)}`;
+        alert(`Congratulations! You cashed out $${cashOutAmount.toFixed(2)}`);
+        cashOutAmount = 0;
+        betAmount = 0;
+        targetMultiplier = 1.00; // Reiniciar el multiplicador objetivo
+        hashGenerated = false; // Reiniciar el estado del hash generado
+        resetMultiplier(); // Reiniciar el multiplicador animado
+      }
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawGraph();
+      cashOutAmount = betAmount * crashMultiplier;
+      document.getElementById('score').innerText = `Cash Out Amount: $${cashOutAmount.toFixed(2)}`;
+      
+      // Verificar si el multiplicador animado alcanza el multiplicador objetivo generado
+      if (crashMultiplier >= targetMultiplier && hashGenerated) {
+        gameOver();
+      } else if (crashMultiplier <= 0) {
+        gameOver();
+      } else {
+        animationFrameId = requestAnimationFrame(animate);
+      }
+    }
+
+    function drawGraph() {
+      ctx.strokeStyle = 'blue';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, canvas.height);
+      for (let i = 0; i < canvas.width; i++) {
+        let y = Math.sin(i / 20) * 50 + 200;
+        ctx.lineTo(i, y);
+      }
+      ctx.stroke();
+
+      ctx.strokeStyle = 'red';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      let multiplierY = canvas.height - (canvas.height * crashMultiplier / 10);
+      ctx.moveTo(0, multiplierY);
+      ctx.lineTo(canvas.width, multiplierY);
+      ctx.stroke();
+
+      ctx.font = "18px Arial";
+      ctx.fillStyle = "black";
+      ctx.fillText(`Multiplier: ${crashMultiplier.toFixed(2)}x`, canvas.width - 150, 30);
+
+      // Mostrar el resultado del hash generado
+      if (!hashGenerated) {
+        generateRandomHash();
+      } else {
+        document.getElementById('multiplier').innerHTML = `Target Multiplier: ${targetMultiplier.toFixed(2)}x - Hash: ${hashResult}`;
+      }
+      
+      // Incrementar el multiplicador animado
+      if (Math.random() < 0.09) {
+        if (crashMultiplier > 10.00) {
+          crashMultiplier += 0.1;
+        } else if (crashMultiplier > 6.00) {
+          crashMultiplier += 0.02;
+        } else if (crashMultiplier > 2.00) {
+          crashMultiplier += 0.015;
+        } else {
+          crashMultiplier += multiplierIncrement;
+        }
+      }
+    }
+
+    function gameOver() {
+      alert(`Game Over! You lost your bet of $${betAmount}`);
+      document.getElementById('betAmount').disabled = false;
+      document.getElementById('placeBetButton').disabled = false;
+      document.getElementById('cashoutButton').disabled = true;
+      betAmount = 0;
+      roundMultiplierHistory = [];
+      updateMultiplierHistory();
+      cashOutAmount = 0;
+      targetMultiplier = 1.00; // Reiniciar el multiplicador objetivo
+      hashGenerated = false; // Reiniciar el estado del hash generado
+      resetMultiplier(); // Reiniciar el multiplicador animado
+      setTimeout(startNewRound, 5000); // Esperar 5 segundos antes de iniciar una nueva ronda
+    }
+
+    function resetMultiplier() {
+      crashMultiplier = 1.00; // Reiniciar el multiplicador animado
+      isPlaying = false; // Marcar como juego no iniciado
+      document.getElementById('betAmount').disabled = false; // Habilitar entrada de apuestas
+      document.getElementById('placeBetButton').disabled = false; // Habilitar botón de apostar
+      document.getElementById('cashoutButton').disabled = true; // Deshabilitar botón de cashout
+    }
+
+    function updateMultiplierHistory() {
+      document.getElementById('history').innerHTML = `Last Round Multiplier: ${roundMultiplierHistory[roundMultiplierHistory.length - 1]}`;
+    }
+
+    function generateRandomHash() {
+      var multiplier = generateWeightedMultiplier();
+      var multiplierString = multiplier.toFixed(2);
+      var hash = generateSHA512Hash(multiplierString);
+      hashResult = hash;
+      targetMultiplier = multiplier;
+      hashGenerated = true;
+    }
+
+    function generateWeightedMultiplier() {
+      var random = Math.random();
+      var ranges = [
+        { min: 0, max: 0.75, multiplier: generateRandomInRange(1, 1.99) },
+        { min: 0.78, max: 0.91, multiplier: generateRandomInRange(2, 4) },
+        { min: 0.91, max: 0.98, multiplier: generateRandomInRange(4.01, 8) },
+        { min: 0.98, max: 0.99, multiplier: generateRandomInRange(8.01, 15) },
+        { min: 0.995, max: 1, multiplier: generateRandomInRange(15.01, 30) },
+        { min: 0.9999, max: 1, multiplier: generateRandomInRange(30.01, 100) },
+        { min: 0.99995, max: 1, multiplier: generateRandomInRange(100, 300) }
+      ];
+      for (var i = 0; i < ranges.length; i++) {
+        if (random >= ranges[i].min && random <= ranges[i].max) {
+          return ranges[i].multiplier;
+        }
+      }
+      return 1.00;
+    }
+
+    function generateRandomInRange(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+
+    function generateSHA512Hash(input) {
+      var hash = '';
+      for (var i = 0; i < input.length; i++) {
+        hash += input.charCodeAt(i) % 16;
+      }
+      return hash;
+    }
+  </script>
+</body>
+</html>
+
