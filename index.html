@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dialogue Tree Maker</title>
+<style>
+    #canvas {
+        border: 1px solid black;
+        margin: 10px;
+        cursor: crosshair;
+    }
+</style>
+</head>
+<body>
+<div>
+    <label for="textInput">Enter Text:</label>
+    <input type="text" id="textInput">
+    <button onclick="addText()">Add Text</button>
+</div>
+<div>
+    <button onclick="clearCanvas()">Clear Canvas</button>
+    <button onclick="exportToJson()">Export JSON</button>
+    <input type="file" id="fileInput" accept=".json" onchange="importFromJson()">
+</div>
+<canvas id="canvas" width="800" height="600"></canvas>
+
+<script>
+    let dialogue = [];
+    let canvas = document.getElementById('canvas');
+    let ctx = canvas.getContext('2d');
+    let selectedTextIndex = -1;
+    let isDragging = false;
+    let offsetX, offsetY;
+
+    canvas.addEventListener('mousedown', handleMouseDown);
+    canvas.addEventListener('mousemove', handleMouseMove);
+    canvas.addEventListener('mouseup', handleMouseUp);
+
+    function addText() {
+        let text = document.getElementById('textInput').value;
+        dialogue.push({ text: text, x: 100, y: dialogue.length * 100 });
+        draw();
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        dialogue.forEach((item, index) => {
+            ctx.fillText(item.text, item.x, item.y);
+            if (index > 0) {
+                ctx.beginPath();
+                ctx.moveTo(dialogue[index - 1].x + ctx.measureText(dialogue[index - 1].text).width, dialogue[index - 1].y);
+                ctx.lineTo(item.x, item.y);
+                ctx.stroke();
+            }
+        });
+    }
+
+    function clearCanvas() {
+        dialogue = [];
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function exportToJson() {
+        let json = JSON.stringify(dialogue);
+        let blob = new Blob([json], { type: 'application/json' });
+        let url = URL.createObjectURL(blob);
+        let a = document.createElement('a');
+        a.href = url;
+        a.download = 'dialogue.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+
+    function importFromJson() {
+        let file = document.getElementById('fileInput').files[0];
+        let reader = new FileReader();
+        reader.onload = function(event) {
+            dialogue = JSON.parse(event.target.result);
+            draw();
+        };
+        reader.readAsText(file);
+    }
+
+    function handleMouseDown(event) {
+        let mouseX = event.clientX - canvas.offsetLeft;
+        let mouseY = event.clientY - canvas.offsetTop;
+        for (let i = 0; i < dialogue.length; i++) {
+            let item = dialogue[i];
+            let textWidth = ctx.measureText(item.text).width;
+            if (mouseX > item.x && mouseX < item.x + textWidth && mouseY > item.y - 15 && mouseY < item.y + 5) {
+                selectedTextIndex = i;
+                offsetX = mouseX - item.x;
+                offsetY = mouseY - item.y;
+                isDragging = true;
+                break;
+            }
+        }
+    }
+
+    function handleMouseMove(event) {
+        if (isDragging) {
+            let mouseX = event.clientX - canvas.offsetLeft;
+            let mouseY = event.clientY - canvas.offsetTop;
+            dialogue[selectedTextIndex].x = mouseX - offsetX;
+            dialogue[selectedTextIndex].y = mouseY - offsetY;
+            draw();
+        }
+    }
+
+    function handleMouseUp() {
+        isDragging = false;
+    }
+</script>
+</body>
+</html>
