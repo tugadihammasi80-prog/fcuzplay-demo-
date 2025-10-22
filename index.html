@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FCUZPLAY ⚽🛩 Demo</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="header">
+    <h1>⚽🛩 FCUZPLAY</h1>
+    <nav>
+      <button class="tab active" data-tab="football">Futbol</button>
+      <button class="tab" data-tab="aviator">Aviator</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- Futbol o'yini -->
+    <section id="football" class="tab-content active">
+      <h2>⚽ Futbol o‘yini</h2>
+      <div class="pitch">
+        <div id="ball"></div>
+      </div>
+      <div class="scoreboard">
+        <span id="score">Hisob: 0 : 0</span>
+      </div>
+      <div class="controls">
+        <button id="start-football" class="btn primary">Boshlash</button>
+        <button id="stop-football" class="btn">To‘xtatish</button>
+        <button id="reset-football" class="btn">Qayta boshlash</button>
+      </div>
+    </section>
+
+    <!-- Aviator o'yini -->
+    <section id="aviator" class="tab-content">
+      <h2>🛩 Aviator demo</h2>
+      <div class="aviator">
+        <div id="plane">🛩</div>
+        <div id="multiplier">x1.00</div>
+      </div>
+      <div class="controls">
+        <button id="start-aviator" class="btn primary">Boshlash</button>
+        <button id="cashout" class="btn">To‘xtatish</button>
+      </div>
+      <div class="status" id="aviator-status">Boshlash tugmasini bosing.</div>
+    </section>
+  </main>
+
+  <footer>
+    <p>© 2025 FCUZPLAY — Demo o‘yinlar platformasi. Haqiqiy pul ishlatilmaydi.</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
