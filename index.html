@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>TEMUR STYLE DUKONI — To‘liq ishlaydigan</title>
+<meta name="description" content="TEMUR STYLE — telefon aksessuarlari. Qora tema, admin panel, savat, checkout, qidiruv." />
+<style>
+  :root{
+    --bg:#000;
+    --card:#0b0b0b;
+    --text:#f7f7f7;
+    --muted:#9aa0a6;
+    --yellow:#ffcc00;
+    --blue:#198cff;
+    --radius:10px;
+    --gap:12px;
+    font-family: Inter, Arial, Helvetica, sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+  header{display:flex;align-items:center;justify-content:space-between;padding:14px; border-bottom:1px solid #0a0a0a}
+  .brand{font-weight:800;color:var(--yellow);font-size:18px}
+  .controls{display:flex;gap:8px;align-items:center}
+  button{cursor:pointer;border:none;border-radius:8px;padding:9px 12px;font-weight:700}
+  .btn-yellow{background:var(--yellow);color:#000}
+  .btn-blue{background:var(--blue);color:#fff}
+  .btn-ghost{background:transparent;color:var(--text);border:1px solid #222}
+  main{max-width:1100px;margin:16px auto;padding:0 14px}
+  .top-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+  .search{flex:1;display:flex;gap:8px}
+  input[type="text"], input[type="search"], input[type="tel"], input[type="email"], input[type="number"]{
+    width:100%;padding:10px;border-radius:8px;border:1px solid #111;background:#070707;color:var(--text)
+  }
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
+  .card{background:var(--card);border:1px solid #111;padding:12px;border-radius:var(--radius);display:flex;flex-direction:column;min-height:220px}
+  .card img{width:100%;height:130px;object-fit:cover;border-radius:8px}
+  .title{font-weight:700;margin-top:10px;font-size:15px}
+  .price{color:var(--yellow);font-weight:800;margin-top:6px}
+  .desc{color:var(--muted);font-size:13px;margin-top:6px;flex:1}
+  footer{padding:18px;text-align:center;color:var(--muted);font-size:13px;margin-top:18px;border-top:1px solid #070707}
+  /* Cart drawer */
+  #cartDrawer{position:fixed;right:16px;bottom:16px;width:360px;max-width:92vw;background:var(--card);border:1px solid #111;padding:12px;border-radius:12px;box-shadow:0 20px 50px rgba(0,0,0,0.6);display:none;z-index:200}
+  .cart-item{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px dashed #111}
+  .cart-item img{width:64px;height:64px;object-fit:cover;border-radius:8px}
+  .cart-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
+  /* Admin panel */
+  #adminPanel{display:none;background:#0b0b0b;border:1px solid #111;padding:12px;border-radius:12px;margin-top:16px}
+  .form-row{display:flex;gap:8px;flex-wrap:wrap}
+  label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+  .small{font-size:13px;color:var(--muted)}
+  .admin-list{margin-top:10px}
+  .admin-card{background:#070707;padding:8px;border-radius:8px;border:1px solid #111;display:flex;gap:8px;align-items:center;margin-bottom:8px}
+  .admin-card img{width:80px;height:60px;object-fit:cover;border-radius:6px}
+  .badge{display:inline-block;padding:6px 8px;border-radius:999px;background:#111;color:var(--muted);font-size:13px}
+  /* modal */
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:999}
+  .modal{background:var(--card);padding:16px;border-radius:12px;max-width:540px;width:94%}
+  /* responsive */
+  @media(max-width:720px){
+    header{padding:12px}
+    .card img{height:120px}
+    #cartDrawer{width:92vw;right:8px;bottom:8px}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">TEMUR STYLE DUKONI</div>
+  <div class="controls">
+    <button id="langBtn" class="btn-blue">Рус</button>
+    <button id="openCartBtn" class="btn-yellow">🛒 <span id="cartCount">0</span></button>
+    <button id="adminToggleBtn" class="btn-ghost">Admin</button>
+  </div>
+</header>
+
+<main>
+  <div class="top-row">
+    <div class="search" style="min-width:220px">
+      <input id="searchInput" type="search" placeholder="Mahsulot qidirish... (masalan: quloqchin, powerbank)" />
+      <button id="searchBtn" class="btn-blue">Qidir</button>
+      <button id="clearBtn" class="btn-ghost">Tozalash</button>
+    </div>
+
+    <div style="display:flex;gap:8px;align-items:center">
+      <span class="small">Tema: <span style="color:var(--yellow)">Qora</span></span>
+    </div>
+  </div>
+
+  <section id="productsSection">
+    <div class="grid" id="productsGrid" aria-live="polite"></div>
+  </section>
+
+  <!-- Admin login & panel (same page) -->
+  <section id="adminSection" style="margin-top:18px;">
+    <div id="adminLoginBox" style="background:#0b0b0b;padding:12px;border:1px solid #111;border-radius:12px;">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <div style="flex:1">
+          <label class="small">Admin parol</label>
+          <input id="adminPassInput" type="password" placeholder="Parol kiritish (temur123)" />
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button id="adminLoginBtn" class="btn-yellow">Kirish</button>
+          <button id="adminLogoutBtn" class="btn-ghost" style="display:none">Chiqish</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="adminPanel">
+      <h3 style="margin-top:0">Admin panel — Mahsulot boshqaruvi</h3>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+        <div style="flex:1;min-width:200px">
+          <label>Nom (UZ)</label>
+          <input id="p_name_uz" type="text" placeholder="Masalan: Powerbank 10000mAh" />
+        </div>
+        <div style="flex:1;min-width:200px">
+          <label>Nom (RU)</label>
+          <input id="p_name_ru" type="text" placeholder="Например: Powerbank 10000mAh" />
+        </div>
+        <div style="width:160px;min-width:120px">
+          <label>Narx (so'm)</label>
+          <input id="p_price" type="number" placeholder="120000" />
+        </div>
+        <div style="width:100%;margin-top:8px">
+          <label>Rasm URL</label>
+          <input id="p_img" type="text" placeholder="https://...jpg (yoki bo'sh qoldiring)" />
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+        <button id="addProductBtn" class="btn-yellow">Mahsulot qo'shish</button>
+        <button id="exportProductsBtn" class="btn-blue">Export products (JSON)</button>
+        <button id="importProductsBtn" class="btn-ghost">Import products (JSON)</button>
+        <input id="importFile" type="file" accept="application/json" style="display:none" />
+      </div>
+
+      <div class="admin-list" id="adminProductsList"></div>
+
+      <h3 style="margin-top:14px">Buyurtmalar</h3>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+        <button id="refreshOrdersBtn" class="btn-blue">Yangilash</button>
+        <button id="downloadOrdersBtn" class="btn-yellow">Yuklab olish (orders.json)</button>
+        <button id="clearOrdersBtn" class="btn-ghost">Buyurtmalarni o'chirish</button>
+      </div>
+      <div id="ordersList"></div>
+    </div>
+  </section>
+</main>
+
+<!-- Cart drawer -->
+<div id="cartDrawer" aria-hidden="true">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <div style="font-weight:800">Savat</div>
+    <div><button id="closeCartBtn" class="btn-ghost">✖</button></div>
+  </div>
+
+  <div id="cartItems" style="max-height:340px;overflow:auto;margin-top:10px"></div>
+
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">
+    <div style="font-weight:800">Jami: <span id="cartTotal">0</span> so'm</div>
+    <div class="cart-actions">
+      <button id="clearCartBtn" class="btn-ghost">Tozalash</button>
+      <button id="checkoutBtn" class="btn-yellow">Buyurtma berish</button>
+    </div>
+  </div>
+</div>
+
+<footer>
+  © <span id="year"></span> TEMUR STYLE DUKONI — demo. Parolni kodda o'zgartiring: <code style="color:var(--yellow)">temur123</code>
+</footer>
+
+<!-- Modal root -->
+<div id="modalRoot" style="display:none"></div>
+
+<script>
+/* ===========================
+  TEMUR STYLE — Single-file store
+  - All data stored in localStorage.
+  - Admin password: change ADMIN_PASSWORD variable below.
+  - Functions: add/edit/delete products, cart, orders export.
+  =========================== */
+
+/* ===== CONFIG ===== */
+const ADMIN_PASSWORD = 'temur123'; // change in code if needed
+const PRODUCTS_KEY = 'temur_products_v1';
+const CART_KEY = 'temur_cart_v1';
+const ORDERS_KEY = 'temur_orders_v1';
+
+/* ===== Helpers ===== */
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => Array.from(document.querySelectorAll(s));
+const money = (n) => Number(n || 0).toLocaleString('uz-UZ');
+const nowISO = () => new Date().toISOString();
+
+function loadProducts(){
+  try{
+    const raw = localStorage.getItem(PRODUCTS_KEY);
+    if(!raw) {
+      // initial sample products
+      const sample = [
+        {id:'p1', name_uz:'Powerbank 10000mAh', name_ru:'Powerbank 10000mAh', price:120000, img:'https://i.imgur.com/1A0aX6H.jpg', desc_uz:'Tez zaryadlovchi', desc_ru:'Быстрая зарядка'},
+        {id:'p2', name_uz:'Simsiz quloqchin', name_ru:'Беспроводные наушники', price:159000, img:'https://i.imgur.com/6Y2KXq4.jpg', desc_uz:'Bluetooth 5.0', desc_ru:'Bluetooth 5.0'},
+        {id:'p3', name_uz:"Telefon qopqog'i", name_ru:'Чехол для телефона', price:35000, img:'https://i.imgur.com/7w0XQ0y.jpg', desc_uz:'Silikon himoya', desc_ru:'Силиконовая защита'},
+        {id:'p4', name_uz:'Ekran himoyasi (Tempered)', name_ru:'Защитное стекло', price:25000, img:'https://i.imgur.com/8hYv9Rk.jpg', desc_uz:'3 qatlamli himoya', desc_ru:'3 слоя защиты'}
+      ];
+      localStorage.setItem(PRODUCTS_KEY, JSON.stringify(sample));
+      return sample;
+    }
+    return JSON.parse(raw || '[]');
+  }catch(e){
+    console.error(e); return [];
+  }
+}
+function saveProducts(list){ localStorage.setItem(PRODUCTS_KEY, JSON.stringify(list)); }
+
+function loadCart(){ try{ return JSON.parse(localStorage.getItem(CART_KEY) || '{}'); }catch(e){ return {}; } }
+function saveCart(cart){ localStorage.setItem(CART_KEY, JSON.stringify(cart)); }
+
+function loadOrders(){ try{ return JSON.parse(localStorage.getItem(ORDERS_KEY) || '[]'); }catch(e){ return []; } }
+function saveOrders(list){ localStorage.setItem(ORDERS_KEY, JSON.stringify(list)); }
+
+/* ===== State ===== */
+let LANG = 'uz'; // 'uz' or 'ru'
+
+/* ===== Render products grid ===== */
+function renderProducts(list){
+  const grid = $('#productsGrid');
+  grid.innerHTML = '';
+  if(!list || list.length === 0){
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:var(--muted)">Mahsulot topilmadi</div>`;
+    return;
+  }
+  list.forEach(p=>{
+    const title = (LANG === 'uz') ? p.name_uz || p.name : p.name_ru || p.name;
+    const desc = (LANG === 'uz') ? (p.desc_uz||'') : (p.desc_ru||'');
+    const card = document.createElement('div'); card.className = 'card';
+    card.innerHTML = `
+      <img src="${p.img || ''}" alt="${escapeHtml(title)}" onerror="this.style.objectFit='contain'">
+      <div class="title">${escapeHtml(title)}</div>
+      <div class="price">${money(p.price)} so'm</div>
+      <div class="desc">${escapeHtml(desc)}</div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
+        <button class="btn-blue" onclick="openDetails('${p.id}')">${LANG==='uz'?'Ko\\'rish':'Посмотреть'}</button>
+        <button class="btn-yellow" onclick="addToCart('${p.id}')">${LANG==='uz'?'Savatga qo\\'shish':'В корзину'}</button>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+/* escape for safety in inserted HTML */
+function escapeHtml(s){ if(!s) return ''; return String(s).replace(/[&<>"']/g, (m)=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
+
+/* ===== Search ===== */
+$('#searchBtn').addEventListener('click', ()=>doSearch($('#searchInput').value.trim()));
+$('#clearBtn').addEventListener('click', ()=>{ $('#searchInput').value=''; renderProducts(loadProducts()); });
+$('#searchInput').addEventListener('keyup', (e)=>{ if(e.key === 'Enter') doSearch(e.target.value.trim()); });
+
+function doSearch(q){
+  if(!q){ renderProducts(loadProducts()); return; }
+  q = q.toLowerCase();
+  const res = loadProducts().filter(p=>{
+    const s = ((p.name_uz||'') + ' ' + (p.name_ru||'') + ' ' + (p.desc_uz||'') + ' ' + (p.desc_ru||'') + ' ' + (p.price||'')).toLowerCase();
+    return s.includes(q);
+  });
+  renderProducts(res);
+}
+
+/* ===== Cart functions ===== */
+function addToCart(id){
+  const products = loadProducts();
+  const p = products.find(x=>x.id===id);
+  if(!p) return alert('Mahsulot topilmadi');
+  const cart = loadCart();
+  if(!cart[id]) cart[id] = { id:id, qty:0, price: p.price };
+  cart[id].qty += 1;
+  saveCart(cart);
+  updateCartCount();
+  openCart();
+}
+
+function updateQty(id, delta){
+  const cart = loadCart();
+  if(!cart[id]) return;
+  cart[id].qty += delta;
+  if(cart[id].qty <= 0) delete cart[id];
+  saveCart(cart);
+  renderCart();
+  updateCartCount();
+}
+
+function removeFromCart(id){
+  const cart = loadCart(); if(cart[id]) delete cart[id]; saveCart(cart); renderCart(); updateCartCount();
+}
+
+function clearCart(){
+  if(!confirm(LANG==='uz'?'Savatni tozalashni xohlaysizmi?':'Очистить корзину?')) return;
+  localStorage.removeItem(CART_KEY);
+  renderCart(); updateCartCount();
+}
+
+/* cart UI */
+function renderCart(){
+  const cart = loadCart();
+  const container = $('#cartItems');
+  container.innerHTML = '';
+  const products = loadProducts();
+  let total = 0;
+  Object.values(cart).forEach(item=>{
+    const p = products.find(x=>x.id===item.id);
+    if(!p) return;
+    total += (item.qty * p.price);
+    const title = LANG==='uz'? (p.name_uz||p.name) : (p.name_ru||p.name);
+    const node = document.createElement('div'); node.className = 'cart-item';
+    node.innerHTML = `
+      <img src="${p.img||''}" alt="${escapeHtml(title)}" onerror="this.style.objectFit='contain'"/>
+      <div style="flex:1">
+        <div style="font-weight:700">${escapeHtml(title)}</div>
+        <div class="small">${money(p.price)} so'm</div>
+      </div>
+      <div style="text-align:right">
+        <div style="display:flex;gap:6px;justify-content:flex-end;align-items:center">
+          <button class="btn-blue" onclick="updateQty('${item.id}', -1)">-</button>
+          <div style="min-width:26px;text-align:center">${item.qty}</div>
+          <button class="btn-blue" onclick="updateQty('${item.id}', 1)">+</button>
+        </div>
+        <div style="margin-top:6px"><button class="btn-ghost" onclick="removeFromCart('${item.id}')">${LANG==='uz'?'O\\'chirish':'Удалить'}</button></div>
+      </div>
+    `;
+    container.appendChild(node);
+  });
+  $('#cartTotal').textContent = money(total);
+}
+
+/* cart drawer controls */
+function openCart(){ $('#cartDrawer').style.display = 'block'; renderCart(); }
+function closeCart(){ $('#cartDrawer').style.display = 'none'; }
+$('#openCartBtn').addEventListener('click', openCart);
+$('#closeCartBtn').addEventListener('click', closeCart);
+$('#clearCartBtn').addEventListener('click', clearCart);
+
+/* update cart count */
+function updateCartCount(){
+  const cart = loadCart();
+  const count = Object.values(cart).reduce((s,i)=>s+i.qty,0);
+  $('#cartCount').textContent = count;
+}
+
+/* checkout */
+$('#checkoutBtn').addEventListener('click', ()=>{
+  const cart = loadCart();
+  if(Object.keys(cart).length === 0){ alert(LANG==='uz'?'Savat bo\\'sh':'Корзина пуста'); return; }
+  // simple modal form
+  openModal(`
+    <h3>${LANG==='uz'?'Buyurtma berish':'Оформить заказ'}</h3>
+    <label class="small">${LANG==='uz'?'Ism va familiya':'Имя и фамилия'}</label><input id="o_name" placeholder="${LANG==='uz'?'Ism Familya':'Имя Фамилия'}"/>
+    <label class="small">${LANG==='uz'?'Telefon raqam':'Телефон'}</label><input id="o_phone" placeholder="+998901234567"/>
+    <label class="small">${LANG==='uz'?'Manzil':'Адрес'}</label><input id="o_addr" placeholder="${LANG==='uz'?'Manzil':'Адрес'}"/>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+      <button class="btn-ghost" onclick="closeModal()">${LANG==='uz'?'Bekor qilish':'Отмена'}</button>
+      <button class="btn-yellow" onclick="placeOrder()">${LANG==='uz'?'Buyurtma yuborish':'Отправить заказ'}</button>
+    </div>
+  `);
+});
+
+function placeOrder(){
+  const name = $('#o_name')?.value?.trim() || '';
+  const phone = $('#o_phone')?.value?.trim() || '';
+  const addr = $('#o_addr')?.value?.trim() || '';
+  if(!name || !phone || !addr){ alert(LANG==='uz'?'Iltimos barcha maydonlarni toʻldiring':'Пожалуйста заполните все поля'); return; }
+
+  const cart = loadCart();
+  const total = Object.values(cart).reduce((s,i)=> s + i.qty * i.price, 0);
+  const orders = loadOrders();
+  const order = {
+    id: 'ORD' + Date.now(),
+    name, phone, addr, items: cart, total, lang: LANG, created: new Date().toISOString()
+  };
+  orders.push(order);
+  saveOrders(orders);
+  // clear cart
+  localStorage.removeItem(CART_KEY);
+  renderCart(); updateCartCount();
+  closeModal();
+  alert(LANG==='uz'?'Buyurtma qabul qilindi! Tez orada siz bilan bogʻlanamiz.':'Заказ принят! Скоро с вами свяжется менеджер.');
+  // refresh admin orders if open
+  renderOrders();
+}
+
+/* ===== Admin area ===== */
+$('#adminLoginBtn').addEventListener('click', adminLogin);
+$('#adminLogoutBtn').addEventListener('click', adminLogout);
+
+function adminLogin(){
+  const v = $('#adminPassInput').value;
+  if(v === ADMIN_PASSWORD){
+    $('#adminPanel').style.display = 'block';
+    $('#adminLogoutBtn').style.display = 'inline-block';
+    $('#adminLoginBtn').style.display = 'none';
+    $('#adminLoginBox')?.scrollIntoView({behavior:'smooth'});
+    renderAdminProducts();
+    renderOrders();
+    localStorage.setItem('temur_admin_logged', '1');
+  } else alert('Parol notoʻgʻri!');
+}
+function adminLogout(){
+  $('#adminPanel').style.display = 'none';
+  $('#adminLogoutBtn').style.display = 'none';
+  $('#adminLoginBtn').style.display = 'inline-block';
+  localStorage.removeItem('temur_admin_logged');
+}
+
+/* add product */
+$('#addProductBtn').addEventListener('click', ()=>{
+  const name_uz = $('#p_name_uz').value.trim();
+  const name_ru = $('#p_name_ru').value.trim();
+  const price = parseInt($('#p_price').value) || 0;
+  const img = $('#p_img').value.trim();
+  if(!name_uz || !name_ru || !price){ alert('Nom va narx kiritilishi shart'); return; }
+  const list = loadProducts();
+  const id = 'p' + Date.now();
+  list.push({id, name_uz, name_ru, price, img, desc_uz:'', desc_ru:''});
+  saveProducts(list);
+  // clear inputs
+  $('#p_name_uz').value=''; $('#p_name_ru').value=''; $('#p_price').value=''; $('#p_img').value='';
+  renderProducts(loadProducts());
+  renderAdminProducts();
+});
+
+/* render admin products list */
+function renderAdminProducts(){
+  const list = loadProducts();
+  const box = $('#adminProductsList');
+  box.innerHTML = '';
+  if(!list.length){ box.innerHTML = '<div class="small">Mahsulotlar yoʻq</div>'; return; }
+  list.forEach(p=>{
+    const el = document.createElement('div'); el.className = 'admin-card';
+    el.innerHTML = `
+      <img src="${p.img || ''}" onerror="this.style.display='none'">
+      <div style="flex:1">
+        <div style="font-weight:700">${escapeHtml(p.name_uz || p.name)}</div>
+        <div class="small">${escapeHtml(p.name_ru || '')}</div>
+        <div class="small">${money(p.price)} so'm</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button class="btn-blue" onclick='editProduct("${p.id}")'>Tahrirlash</button>
+        <button class="btn-ghost" onclick='deleteProduct("${p.id}")'>Oʻchirish</button>
+      </div>
+    `;
+    box.appendChild(el);
+  });
+}
+
+/* delete product */
+function deleteProduct(id){
+  if(!confirm('Mahsulotni oʻchirmoqchimisiz?')) return;
+  let list = loadProducts().filter(p=>p.id !== id);
+  
